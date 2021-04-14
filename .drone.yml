@@ -1,0 +1,64 @@
+when_release: &when_release
+  when:
+    ref:
+      - refs/tags/v*
+
+when_stage: &when_stage
+  when:
+    ref:
+      include:
+        - refs/heads/main
+      exclude:
+        - refs/tags/v*
+
+when_dev: &when_dev
+  when:
+    ref:
+      exclude:
+        - refs/tags/v*
+        - refs/heads/main
+
+kind: pipeline
+type: docker
+name: default
+
+steps:
+  - name: docker-ecs-cli-1.21.0_prod
+    image: plugins/docker
+    settings:
+      username: karimlamouri
+      password:
+        from_secret: docker_password
+      repo: karimlamouri/docker-ecs-cli
+      build_args:
+        - ECS_CLI_VERSION=1.21.0
+      tags:
+        - latest
+        - ${DRONE_TAG##v}-1.21.0
+    <<: *when_release
+
+  - name: docker-ecs-cli-1.21.0_stage
+    image: plugins/docker
+    settings:
+      username: karimlamouri
+      password:
+        from_secret: docker_password
+      repo: karimlamouri/docker-ecs-cli
+      build_args:
+        - ECS_CLI_VERSION=1.21.0
+      tags:
+        - stage-1.21.0
+    <<: *when_stage
+
+  - name: docker-ecs-cli-1.21.0_dev
+    image: plugins/docker
+    settings:
+      username: karimlamouri
+      password:
+        from_secret: docker_password
+      repo: karimlamouri/docker-ecs-cli
+      build_args:
+        - ECS_CLI_VERSION=1.21.0
+      tags:
+        - SNAPSHOT-${DRONE_BRANCH}-1.21.0
+    <<: *when_dev
